@@ -1,17 +1,19 @@
 import { Request, Response } from "express";
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto'
-import { users } from '../data/dataBase'
-import type { User } from '../data/dataBase'
+import type { User } from '../types/types'
+import { AuthRepository } from "../repositories/authRepository";
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
 
 const register = async (request: Request, response: Response) => {
     try {
-        const { user, password } = request.body;
-        const existingUser = users.find(u => u.user === user);
+        const { username, password } = request.body;
 
-        if (!user?.trim() || !password?.trim()) {
+        const authRepository = new AuthRepository();
+        const existingUser: string = await authRepository.verifyUserByUsername(username);
+
+        if (!username?.trim() || !password?.trim()) {
             return response.status(400).json({ "message": "Missing username or password" })
         } else if (existingUser) {
             return response.status(409).json({ "message": "Username is already in use" })
@@ -21,11 +23,12 @@ const register = async (request: Request, response: Response) => {
 
         const newUser: User = {
             id: randomUUID(),
-            user,
-            password: passHash
+            username,
+            role: 'user',
+            password: passHash,
         }
 
-        users.push(newUser);
+        authRepository.createUser(newUser);
         response.status(201).json({ "message": "Ceated" })
 
     } catch (error) {
@@ -35,13 +38,14 @@ const register = async (request: Request, response: Response) => {
 
 const login = async (request: Request, response: Response) => {
     try {
-        const { user, password } = request.body;
+        const { username, password } = request.body;
 
-        if (!user?.trim() || !password?.trim()) {
+        if (!username?.trim() || !password?.trim()) {
             return response.status(400).json({ "message": "Invalid credentials" })
         }
 
-        const existingUser = users.find(u => u.user === user);
+        const authRepository = new AuthRepository();
+        const existingUser = await authRepository.getuserByUsername(username);
         if (!existingUser) return response.status(401).json({ message: "Invalid credentials" });
 
         const isPassword = await bcrypt.compare(password, existingUser.password);
@@ -49,7 +53,8 @@ const login = async (request: Request, response: Response) => {
 
         const payload = {
             id: existingUser.id,
-            user: existingUser.user
+            user: existingUser.username,
+            role: existingUser.role
         }
 
         if (!process.env.JWT_KEY) {
