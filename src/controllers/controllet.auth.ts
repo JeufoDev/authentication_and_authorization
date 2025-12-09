@@ -15,7 +15,7 @@ const register = async (request: Request, response: Response) => {
             username: z.string().min(8),
             email: z.email(),
             password: z.string().min(8).max(30)
-        })
+        });
 
         const result = schema.safeParse({ username, email, password })
 

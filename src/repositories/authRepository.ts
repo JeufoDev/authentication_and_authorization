@@ -1,5 +1,5 @@
 import database from '../config/configDatabase'
-import { User } from '../types/types';
+import { User, UserAuth, UserId } from '../types/types';
 
 export class AuthRepository {
 
@@ -18,7 +18,7 @@ export class AuthRepository {
             user.password
         ];
 
-        const result = await database.query(query, values);
+        const result = await database.query<User>(query, values);
         return result.rows[0];
     }
 
@@ -37,14 +37,9 @@ export class AuthRepository {
         LIMIT 1
         `;
 
-        const values = [
-            username,
-            email
-        ];
-
         const [usernameResult, emailResult] = await Promise.all([
-            database.query(queryusername, [username]),
-            database.query(queryEmail, [email])
+            database.query<UserId>(queryusername, [username]),
+            database.query<UserId>(queryEmail, [email])
         ]);
 
         return {
@@ -61,7 +56,7 @@ export class AuthRepository {
         LIMIT 1;
         `;
 
-        const result = await database.query(query, [username]);
+        const result = await database.query<UserAuth>(query, [username]);
         return result.rows[0];
     }
 }

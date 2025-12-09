@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, QueryResult, QueryResultRow } from 'pg';
 import 'dotenv/config';
 
 const pool = new Pool({
@@ -9,4 +9,10 @@ const pool = new Pool({
     password: process.env.PASSWORD_DB
 });
 
-export default pool;
+const database = {
+    query: <T extends QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<T>> => {
+        return pool.query(text, params);
+    }
+}
+
+export default database;
